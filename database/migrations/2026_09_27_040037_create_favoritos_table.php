@@ -13,15 +13,18 @@ return new class extends Migration
     {
         Schema::create('favoritos', function (Blueprint $table) {
             $table->id();
-            $table->date('fecha');
-            $table->foreignId('id_cliente')
-                ->constrained('clientes','id')
-                ->onDelete('cascade')
-                ->onUpdate('cascade');
-            $table->foreignId('id_producto')
-                ->constrained('productos','id')
-                ->onDelete('cascade')
-                ->onUpdate('cascade');
+            $table->foreignId('cliente_id')
+                ->constrained('clientes')
+                ->cascadeOnDelete()
+                ->cascadeOnUpdate();
+            $table->foreignId('producto_id')
+                ->constrained('productos')
+                ->cascadeOnDelete()
+                ->cascadeOnUpdate();
+            // created_at reemplaza a la antigua columna "fecha"
+            $table->timestamps();
+            // un cliente no puede marcar dos veces el mismo producto
+            $table->unique(['cliente_id', 'producto_id']);
         });
     }
 

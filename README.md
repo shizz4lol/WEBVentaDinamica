@@ -1,256 +1,197 @@
-# Sobre Venta Dinamica
+# Venta Dinámica
 
-Esta es una aplicación web de comercio virtual orientada a la venta de cómics y mangas. El proyecto integra tecnologías de desarrollo frontend y backend, junto con contenedores en Docker para facilitar la configuración y ejecución del entorno.
-Contiene lógica básica de CRUD de productos, y lógica de logeo para administradores y usuario.
-Se decidio este dominio por interés propio de la alumna Rizzuto Á. :3
+Tienda online de mangas y cómics. El original está en el commit `a11fc78`. Consultá también [MEJORAS.md](MEJORAS.md) y [GUIA-AMBAR.md](GUIA-AMBAR.md).
 
-## Tecnologías utilizadas
+Usa Laravel 13, Blade, React 19, Vite, Tailwind 4 y MariaDB 11.4. Docker ejecuta `app` (Laravel), `vite` (recursos del navegador) y `db` (base de datos).
 
-- **HTML5:** estructura de las páginas web.
-- **CSS3:** estilos y diseño visual.
-- **JavaScript:** interactividad del frontend.
-- **PHP 8.5.6:** lenguaje utilizado en el backend. [Instalar](https://www.php.net/downloads.php)
-- **Laravel 13:** framework PHP
-- **React:** biblioteca JS para el uso de componentes en el frontend.
-- **Node.js 22:** entorno de ejecución para las herramientas del frontend. [Instalar](https://nodejs.org/es/download)
-- **Vite:** servidor de desarrollo y herramienta de compilación de recursos.
-- **MariaDB 11.4:** sistema de gestión de bases de datos relacional.
-- **Docker:** configuración y ejecución de los servicios mediante contenedores. [Instalar](https://www.docker.com/products/docker-sandboxes/)
-- **WSL 2:** subsistema que permite la ejecución de Docker (el cual es nativo de Linux). 
-- **Composer:** administrador de dependencias de PHP. [Instalar](https://getcomposer.org/download/)
-- **npm:** administrador de dependencias de JavaScript.
+## Requisitos
 
-## Requisitos previos
+- Windows con PowerShell.
+- Docker Desktop instalado, abierto y configurado para contenedores Linux.
+- Git instalado para guardar cambios y consultar el historial.
+- Internet para descargar las imágenes de Docker y las dependencias la primera vez.
 
-Para ejecutar el proyecto, se necesita tener instalado:
+No necesitás instalar PHP, Composer ni Node en Windows: están dentro de Docker.
 
-- WSL 2 (o Linux en su defecto)
-- Docker Desktop.
-- Docker Compose, incluido en las instalaciones actuales de Docker Desktop.
-- NPM
-- Git, si se desea clonar el repositorio.
+## Instalación desde cero
 
-No es realmente necesario instalar PHP, Composer, Node.js ni MariaDB directamente en Windows, ya que se ejecutan dentro de los contenedores correspondientes. Aun asi, para la configuración en entorno de producción, se configuro toda la BD en Laravel con Composer, y lo único que se instalo dentro de Docker fueron las dependencias correspondientes a React.
-Este proyecto NO utiliza XAMPP.
+Abrí PowerShell en la carpeta del proyecto, donde está `compose.yaml`. Todos los comandos de esta guía se ejecutan desde ahí.
 
-## Estructura del entorno Docker
+1. Abrí Docker Desktop, esperá a que termine de iniciar y comprobá las herramientas:
 
-El entorno utiliza tres servicios principales definidos en `compose.yaml`:
+   ```powershell
+   docker version
+   docker compose version
+   git --version
+   ```
 
-| Servicio | Función |
-|---|---|
-| `app` | Ejecuta Laravel y PHP. |
-| `vite` | Ejecuta Node.js, Vite y las herramientas del frontend React. |
-| `db` | Ejecuta el servidor de base de datos MariaDB mediante la conexión con. |
+2. Creá tu configuración local una sola vez. Si ya tenés `.env`, conservá ese archivo:
 
-Los contenedores se comunican a través de la red interna de Docker.
+   ```powershell
+   copy .env.example .env
+   ```
 
-### Puertos utilizados
+   Las contraseñas de `.env.example` son de prueba. Si querés cambiar `DB_PASSWORD` o `DB_ROOT_PASSWORD`, hacelo antes del primer arranque: después la base ya quedó creada con las anteriores. Conservá `DB_HOST=db` y `DB_PORT=3306`: Laravel usa la red interna de Docker. No subas `.env` a Git.
 
-| Servicio | Puerto del host | Puerto del contenedor |
-|---|---:|---:|
-| Laravel | 8001 | 8000 |
-| Vite | 5173 | 5173 |
-| MariaDB | 3307 | 3306 |
+3. Construí y levantá los servicios:
 
-La aplicación Laravel estará disponible en:
+   ```powershell
+   docker compose up -d --build
+   docker compose ps
+   docker compose logs -f app vite db
+   ```
 
-http://localhost:8001
+   La primera vez tarda: `app` ejecuta `composer install` y `vite` ejecuta `npm install` automáticamente. Puede tardar varios minutos. Está listo cuando en los logs aparecen estas dos líneas:
 
-El servidor de desarrollo de Vite estará disponible en:
+   - de `ventadinamica_app`: `Server running on [http://0.0.0.0:8000]`
+   - de `ventadinamica_vite`: `VITE v... ready in ...`
 
-http://localhost:5173
+   Si ves líneas que dicen `error-handler`, no es un error: es el nombre de un paquete que se está instalando. Con `Ctrl+C` salís de los logs; los servicios siguen funcionando.
 
-El puerto `3307` permite acceder a MariaDB desde el equipo anfitrión, por ejemplo, mediante un cliente de bases de datos. Dentro de Docker, Laravel debe conectarse al servicio `db` mediante el puerto `3306`. Esto fue particularmente configurado mediante los archivos `Dockerfile` y `.env` en la raíz de la carpeta de Laravel.
+4. Generá la clave de Laravel:
 
-## Instalación y configuración
+   ```powershell
+   docker compose exec app php artisan key:generate
+   ```
 
-### 1. Obtener el proyecto
+5. Creá las tablas y cargá los datos de prueba:
 
-Clonar el repositorio o descargar sus archivos y abrir una terminal en el directorio raíz del proyecto, donde se encuentra el archivo `compose.yaml`.
+   ```powershell
+   docker compose exec app php artisan migrate --seed
+   ```
 
-### 2. Configurar las variables de entorno
+6. Abrí http://localhost:8001. Vite funciona en http://localhost:5173 para servir CSS y JavaScript; la tienda se abre en el 8001. Dejá ambos servicios funcionando mientras trabajás.
 
-Crear el archivo `.env` a partir de `.env.example` (se cambia el nombre, eliminándose '.example').
+## Usuarios de prueba
 
-Configurar las variables de Laravel según el entorno Docker. Los valores de usuario y contraseña deben coincidir con los definidos para el servicio MariaDB en el archivo Compose.
+Después de cargar los seeders, entrá desde http://localhost:8001/login:
 
-Actualmente, los usuarios están asi:
+| Rol | Usuario | Contraseña |
+| --- | --- | --- |
+| Cliente | `cliente` | `cliente1234` |
+| Administrador | `admin` | `admin1234` |
 
-```dotenv
-DB_CONNECTION=mysql
-DB_HOST=db
-DB_PORT=3306
-DB_DATABASE=ventadinamica
-DB_USERNAME=ventadinamica_admin
-DB_PASSWORD=----
-DB_ROOT_PASSWORD=----
+Están definidos en `database/seeders/ClienteSeeder.php` y `database/seeders/AdministradorSeeder.php`. El panel está en http://localhost:8001/admin y por ahora solo lista productos. Todavía no hay pago online. El contacto valida datos, pero no envía correos.
+
+## Si tenés la base original o querés reiniciar los datos
+
+**El siguiente comando borra TODAS las tablas y sus datos de la base configurada y vuelve a cargar los datos de prueba. Perdés usuarios, carritos y cualquier dato agregado. Guardá lo que necesites antes de ejecutarlo.**
+
+Quien tenga la base vieja del original tiene que reconstruirla así: se modificaron migraciones existentes y ejecutar solamente `migrate` no actualiza esas tablas.
+
+```powershell
+docker compose exec app php artisan migrate:fresh --seed
 ```
 
-Los valores de usuarios son correctos, pero por una cuestión de seguridad deberá poner otras contraseñas.
-**Importante:** `DB_HOST=db` corresponde al nombre del servicio de MariaDB dentro de la red de Docker. No debe utilizarse `localhost` desde el contenedor de Laravel para conectarse a esa base de datos.
+## Tests
 
-### 3. Construir e iniciar los contenedores
+Con `app` funcionando:
 
-Desde el directorio raíz del proyecto, ejecutar:
-
-```bash
-docker compose up -d --build
+```powershell
+docker compose exec app php artisan test
 ```
 
-Este comando construye las imágenes necesarias e inicia los servicios definidos en la configuración de Docker Compose.
+`phpunit.xml` configura SQLite en memoria: los tests no usan la base MariaDB de la tienda. `tests/TestCase.php` desactiva Vite durante los tests.
 
-Para comprobar el estado de los contenedores:
+## Apagar y volver a trabajar
 
-```bash
-docker compose ps
+Para apagar los servicios y conservar la base:
+
+```powershell
+docker compose down
 ```
 
-### 4. Instalar las dependencias de Laravel
+Para volver a levantarlos:
 
-Si las dependencias de PHP todavía no están instaladas, ejecutar Composer dentro del contenedor de Laravel:
-
-```bash
-docker compose exec app composer install
-```
-
-Generar/actualizar la clave de la aplicación si aún no existe:
-
-```bash
-docker compose exec app php artisan key:generate
-```
-
-Si el proyecto utiliza migraciones y estas todavía no se han ejecutado, inicializar la base de datos:
-
-```bash
-docker compose exec app php artisan migrate
-```
-
-Este último comando crea las tablas definidas en las migraciones pendientes. Al ejecutar ese comando también cargara el seeder de Administrador.
-
-### 5. Instalar las dependencias del frontend
-
-Para las dependencias de Node.js ejecutar:
-
-```bash
-docker compose exec vite npm install
-```
-
-Este paso debe realizarse en el directorio del contenedor `vite` que contiene el archivo `package.json`. Si el servicio ya instala las dependencias automáticamente, no es necesario repetirlo.
-
-### 6. Acceder a la aplicación
-
-Una vez iniciados los servicios, abrir:
-
-http://localhost:8001
-
-Durante el desarrollo, Vite proporciona los recursos frontend y permite aplicar los cambios de JavaScript, React y CSS según la configuración de HMR.
-
-Los archivos del proyecto se encuentran vinculados mediante los volúmenes definidos en Docker Compose. Por ello, los cambios realizados en los archivos locales se reflejan dentro de los contenedores sin tener que reconstruir las imágenes cada vez, salvo que se modifique la configuración de la imagen o alguna dependencia que requiera reconstrucción.
-
-## Comandos útiles
-
-### Administrar los contenedores
-
-Iniciar los servicios:
-
-```bash
+```powershell
 docker compose up -d
 ```
 
-Detener los servicios:
+**La siguiente variante elimina también el volumen `mariadb_data`: borra la base guardada.** Después tendrás que crear las tablas y cargar los seeders otra vez.
 
-```bash
-docker compose down
+```powershell
+docker compose down -v
 ```
 
-Reconstruir las imágenes e iniciar los servicios:
+## Problemas comunes
 
-```bash
+### Docker Desktop apagado
+
+Si Docker no puede conectarse a su motor, abrí Docker Desktop, esperá a que esté listo y repetí `docker version` y el arranque. Para ver qué falló:
+
+```powershell
+docker compose ps
+docker compose logs app vite db
+```
+
+### Antivirus que intercepta HTTPS
+
+Algunos antivirus revisan las conexiones HTTPS y eso rompe las descargas dentro de Docker. En esta computadora pasó con el escudo web de Avast durante el build: aparecen errores de certificado o descargas que fallan en `composer install` o `npm install`. Pausá ese escudo solo mientras se construye y volvé a activarlo al terminar. Para reintentar:
+
+```powershell
 docker compose up -d --build
 ```
 
-Consultar los registros:
+### "Conflict. The container name ... is already in use"
 
-```bash
-docker compose logs -f
-```
+Los contenedores de este proyecto se llaman `ventadinamica_app`, `ventadinamica_vite` y `ventadinamica_db`. Si tenés otra copia del proyecto (por ejemplo, tu versión anterior) levantada o creada, Docker no deja crear otra con los mismos nombres. Andá a la carpeta de la otra copia, apagala y volvé:
 
-Consultar los registros de Laravel:
-
-```bash
-docker compose logs -f app
-```
-
-Consultar los registros de Vite:
-
-```bash
-docker compose logs -f vite
-```
-
-### Ejecutar comandos de Laravel
-
-Ejecutar migraciones:
-
-```bash
-docker compose exec app php artisan migrate
-```
-
-Mostrar las rutas de Laravel:
-
-```bash
-docker compose exec app php artisan route:list
-```
-
-Limpiar las cachés de Laravel:
-
-```bash
-docker compose exec app php artisan optimize:clear
-```
-
-Abrir una terminal dentro del contenedor de Laravel:
-
-```bash
-docker compose exec app sh
-```
-
-### Acceder a MariaDB
-
-Abrir una terminal en el contenedor de la base de datos:
-
-```bash
-docker compose exec db mariadb -u usuario -p
-```
-
-Reemplazar `usuario` por el usuario configurado en el servicio MariaDB. El comando solicitará la contraseña.
-
-## Persistencia de datos
-
-La base de datos utiliza un volumen persistente de Docker, denominado `mariadb_data`, asociado al directorio de datos de MariaDB.
-
-Esto permite conservar los datos aunque se detengan o eliminen los contenedores, siempre que no se elimine el volumen.
-
-El comando:
-
-```bash
+```powershell
 docker compose down
 ```
 
-detiene y elimina los contenedores, pero conserva los volúmenes por defecto.
+### Puerto ocupado
 
-## Desarrollo
+Estos son los mapeos reales de `compose.yaml`:
 
-El código de Laravel se encuentra en el directorio del proyecto y se ejecuta dentro del contenedor `app`.
+| Servicio | Puerto en Windows | Puerto dentro del contenedor |
+| --- | --- | --- |
+| `app` | 8001 | 8000 |
+| `vite` | 5173 | 5173 |
+| `db` | 3307, solo en 127.0.0.1 | 3306 |
 
-Los recursos frontend se gestionan mediante React, Node.js y Vite, utilizando el servicio `vite`.
+Buscá qué proceso usa el puerto. La última columna de la salida es su PID; podés buscarlo en el Administrador de tareas:
 
-MariaDB funciona de forma independiente en el servicio `db`, pero se comunica con Laravel mediante la red interna de Docker y la configuración previa en el `.env`.
+```powershell
+netstat -ano | findstr :8001
+netstat -ano | findstr :5173
+netstat -ano | findstr :3307
+```
 
-Los cambios realizados en los archivos locales se reflejan en los contenedores mediante los volúmenes configurados, por lo que normalmente no es necesario reconstruirlos para cada modificación del código.
+Si sospechás de una instalación local de MariaDB/MySQL:
 
-## Consideraciones
+```powershell
+netstat -ano | findstr :3306
+```
 
-- No subir el archivo `.env` al repositorio si contiene credenciales o claves privadas.
-- Mantener `.env.example` actualizado, sin incluir contraseñas reales.
-- Verificar que los nombres de los servicios, las variables de entorno y los puertos coincidan con el archivo Compose del proyecto.
-- No eliminar el volumen de MariaDB si se necesita conservar la información almacenada.
+Que Windows tenga ocupado el 3306 no entra en conflicto con este proyecto: la base se publica en el 3307.
+
+Para cambiar un puerto, editá `ports` del servicio en `compose.yaml`. En `8001:8000` cambiás solo el número de la izquierda por uno libre; en `127.0.0.1:3307:3306`, cambiás el del medio. Conservá el puerto interno. Aplicá el cambio con:
+
+```powershell
+docker compose up -d
+```
+
+Si cambiás el de `app`, actualizá también `APP_URL` en tu `.env` y la dirección del navegador. Si cambiás el publicado de `db`, mantené `DB_PORT=3306` en `.env`.
+
+Para Vite, lo más sencillo es liberar el 5173 cerrando la otra aplicación. Cambiar su puerto requiere coordinar también `server.port` y HMR en `vite.config.js` con el mapeo de `compose.yaml`: cambiar solamente el puerto publicado puede cortar la carga de recursos o la actualización automática.
+
+## El día a día
+
+Una vez instalado, no hace falta repetir todo. Cada vez que te sentás a programar:
+
+1. Abrí Docker Desktop y esperá a que diga que está andando.
+2. Abrí PowerShell en la carpeta del proyecto y levantá todo:
+
+   ```powershell
+   docker compose up -d
+   ```
+
+3. Esperá unos segundos y entrá a http://localhost:8001.
+4. Cuando termines, apagalo:
+
+   ```powershell
+   docker compose down
+   ```
+
+Los datos quedan guardados para la próxima. Si algo no carga, mirá qué pasa con `docker compose logs app vite`.

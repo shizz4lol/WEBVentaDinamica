@@ -21,12 +21,21 @@ class Compra extends Model
         'descuento',
         'total',
         'metodo_pago',
-        'numero_tarjeta',
         'estado_envio',
-        'id_cliente',
-        'id_carrito'
+        'cliente_id'
     ];
+    protected function casts(): array
+    {
+        return [
+            'fecha' => 'date',
+            'subtotal' => 'decimal:2',
+            'total' => 'decimal:2',
+        ];
+    }
     public function cliente(){
-        return $this->belongsTo(Cliente::class, 'id_cliente');
+        return $this->belongsTo(Cliente::class);
+    }
+    public function detalles(){
+        return $this->hasMany(DetalleCompra::class);
     }
 }

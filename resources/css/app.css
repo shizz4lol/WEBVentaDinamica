@@ -1,9 +1,213 @@
 @import 'tailwindcss';
+@import '@fontsource/dela-gothic-one/latin-400.css';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
+@source '../views';
+@source '../js';
 
+/*
+ * Paleta de Venta Dinámica (la misma de public/css/global.css original).
+ * Cada color se puede usar como clase de Tailwind: bg-fondo, text-rosa, border-borde, etc.
+ * Blanco sobre violeta y rosa sobre fondo para conservar contraste AA.
+ * El violeta se reserva para los fondos de botones.
+ */
 @theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+    --color-fondo: #121823;
+    --color-superficie: #1a2232;
+    --color-superficie-2: #232d40;
+    --color-borde: #34415b;
+    --color-texto: #f4f6fb;
+    --color-texto-suave: #b4bdcc;
+    --color-rosa: #ff54ca;
+    --color-violeta: #a145b4;
+    --color-violeta-oscuro: #86379a;
+    --color-error: #ff54ca;
+    --color-exito: #f4f6fb;
+
+    --font-sans: system-ui, 'Segoe UI', Roboto, Arial, sans-serif;
+    --font-titulo: 'Dela Gothic One', 'Arial Black', sans-serif;
+
+    /* Resplandor rosa para tarjetas y portadas (en vez de la sombra gris de siempre) */
+    --shadow-neon: 0 10px 28px -14px var(--color-rosa);
+    --animate-encender: encender 1.4s ease-out 1 both;
+
+    @keyframes encender {
+        0% { opacity: 0.2; text-shadow: none; }
+        10% { opacity: 1; }
+        16% { opacity: 0.35; text-shadow: none; }
+        24%, 100% { opacity: 1; }
+    }
+}
+
+@layer base {
+    html {
+        color-scheme: dark;
+    }
+    body {
+        @apply bg-fondo text-texto font-sans antialiased;
+    }
+    /* Foco visible para quien navega con teclado */
+    :focus-visible {
+        outline: 3px solid var(--color-rosa);
+        outline-offset: 2px;
+    }
+}
+
+@layer components {
+    /* El logo y los títulos de Ámbar: tipografía display con su sombra rosa */
+    .logo {
+        @apply font-titulo tracking-wide text-texto;
+        text-shadow: 2px 2px 4px var(--color-rosa);
+    }
+    .titulo-seccion {
+        @apply font-titulo text-3xl tracking-wide md:text-4xl;
+        text-shadow: 2px 2px 4px color-mix(in oklab, var(--color-rosa) 55%, transparent);
+    }
+    /* Cartel de neón: el mismo rosa, pero con brillo alrededor (solo en el hero) */
+    .neon {
+        @apply font-titulo tracking-wide text-texto;
+        text-shadow:
+            0 0 2px #fff,
+            0 0 10px var(--color-rosa),
+            0 0 26px var(--color-rosa),
+            2px 2px 4px var(--color-rosa);
+    }
+    /* Trama de puntos, como la "screentone" de los mangas */
+    .trama {
+        background-image: radial-gradient(color-mix(in oklab, var(--color-violeta) 55%, transparent) 1.3px, transparent 1.7px);
+        background-size: 11px 11px;
+    }
+
+    /* min-h-11 = 44 px: objetivo táctil cómodo en el celular */
+    .btn {
+        @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold motion-safe:transition-colors;
+    }
+    .btn-primario {
+        @apply bg-violeta text-white hover:bg-violeta-oscuro;
+    }
+    .btn-secundario {
+        @apply border border-borde text-texto hover:border-rosa hover:text-rosa;
+    }
+    .btn:disabled {
+        @apply cursor-not-allowed bg-superficie-2 text-texto-suave;
+    }
+    .campo {
+        @apply min-h-11 w-full rounded-lg border border-borde bg-superficie px-3 py-2.5 text-texto placeholder:text-texto-suave focus:border-rosa;
+    }
+    .etiqueta {
+        @apply mb-1 block text-sm font-semibold;
+    }
+    .error-campo {
+        @apply mt-1 text-sm text-error;
+    }
+    .tarjeta {
+        @apply rounded-lg border border-borde bg-superficie p-3;
+    }
+    .enlace {
+        @apply text-rosa underline-offset-4 hover:underline;
+    }
+    .badge {
+        @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-bold;
+    }
+
+    /* Globo de diálogo para los estados vacíos (carrito vacío, búsqueda sin resultados) */
+    .globo {
+        @apply relative rounded-lg border border-borde bg-superficie px-6 py-5;
+    }
+    .panel {
+        @apply rounded-lg border border-borde bg-superficie;
+    }
+    .cabecera-seccion {
+        @apply mb-5 flex flex-wrap items-end justify-between gap-3 border-b border-borde pb-3;
+    }
+    .producto {
+        @apply rounded-md p-2;
+    }
+    .producto .badge {
+        border-radius: 0.2rem;
+        padding-inline: 0.35rem;
+        font-size: 0.6875rem;
+    }
+    .producto .btn {
+        @apply px-2 text-xs;
+    }
+    .collage-portadas {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        overflow: hidden;
+        pointer-events: none;
+        background: var(--color-fondo);
+    }
+    .collage-portadas::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: color-mix(in srgb, var(--color-fondo) 89%, transparent);
+    }
+    .collage-grilla {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 0.75rem;
+        filter: grayscale(1);
+        transform: rotate(-8deg) scale(1.3);
+        transform-origin: center;
+    }
+    .collage-grilla img {
+        width: 100%;
+        height: 100%;
+        aspect-ratio: 2 / 3;
+        object-fit: cover;
+    }
+}
+
+@layer base {
+    html { scroll-padding-top: 1.5rem; }
+    body { isolation: isolate; }
+    main { overflow-wrap: anywhere; }
+    main > * { min-width: 0; }
+    input, textarea, select { max-width: 100%; }
+    label:has(input[type="radio"]),
+    label:has(input[type="checkbox"]) {
+        min-height: 44px;
+        cursor: pointer;
+    }
+    .enlace { display: inline-flex; min-height: 44px; align-items: center; }
+}
+
+@media (min-width: 1280px) {
+    .header-interior { flex-wrap: nowrap; }
+    #menu-principal { font-size: 0.8125rem; column-gap: 0.65rem; }
+}
+@media (max-width: 479px) {
+    .collage-grilla { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+/* Banners editoriales: dos en escritorio, uno en celular. */
+.banners { --banner-gap: 16px; margin-bottom: 2.25rem; }
+.banners-ventana { overflow: hidden; border-radius: 12px; }
+.banners-pista { position: relative; display: flex; gap: var(--banner-gap); transition: transform 600ms cubic-bezier(.22,.61,.36,1); }
+.banners-pista.sin-transicion { transition: none; }
+.banner-slide { flex: 0 0 100%; min-width: 0; }
+.banner { position: relative; display: block; isolation: isolate; overflow: hidden; width: 100%; aspect-ratio: 16 / 6; min-height: 180px; color: #fff; border: 1px solid #a145b4; border-radius: 12px; background: #121823; }
+.banner-fondo { position: absolute; inset: -8%; width: 116%; height: 116%; object-fit: cover; object-position: center 35%; filter: blur(5px); opacity: .7; transition: transform 600ms ease; z-index: -3; }
+.banner-degradado { position: absolute; inset: 0; background: linear-gradient(90deg,#121823 0%,rgba(18,24,35,.92) 24%,rgba(18,24,35,.58) 63%,transparent 100%),linear-gradient(0deg,rgba(161,69,180,.35),transparent 65%); z-index: -1; }
+.banner-portada { position: absolute; right: 5%; bottom: -13%; width: 29%; height: 112%; object-fit: contain; transform: rotate(7deg); filter: drop-shadow(0 10px 15px #121823); z-index: -2; transition: transform 600ms ease; }
+.banner-texto { position: relative; padding: clamp(14px,2.4vw,28px); width: 72%; }
+.banner-texto h2 { font-family: 'Dela Gothic One', sans-serif; font-size: clamp(20px,2.3vw,30px); line-height: 1.16; margin: 10px 0 8px; text-wrap: balance; }
+.banner-texto p { font-size: clamp(12px,1.2vw,15px); line-height: 1.4; max-width: 28ch; }
+.banner-badge { display: inline-block; background: #ff54ca; color: #121823; padding: 3px 9px; font-size: 10px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; border-radius: 3px; }
+.banner-cta { display: inline-block; margin-top: 12px; font-size: 11px; font-weight: 800; color: #ffb3e9; }
+.banner:hover .banner-fondo { transform: scale(1.06); }
+.banner:hover .banner-portada { transform: rotate(4deg) scale(1.035); }
+.es-visible .banner-texto { animation: banner-entrada 600ms ease both; }
+@keyframes banner-entrada { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+[data-carrusel] :focus-visible, [data-carrusel]:focus-visible { outline: 3px solid #ff54ca; outline-offset: 3px; }
+.banner:focus-visible { outline-offset: -4px; }
+@media (min-width: 768px) { .banner-slide { flex-basis: calc((100% - var(--banner-gap)) / 2); } }
+@media (max-width: 479px) { .banner-texto { padding: 16px; } .banner-texto h2 { font-size: 21px; } }
+@media (prefers-reduced-motion: reduce) {
+    .banners-pista, .banner-fondo, .banner-portada { transition: none; }
+    .es-visible .banner-texto { animation: none; }
 }

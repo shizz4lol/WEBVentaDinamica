@@ -2,29 +2,34 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class DetalleCompra extends Model
 {
-    use HasFactory;
-
     protected $table = 'detalle_compras';
 
     protected $fillable = [
-        'id_producto',
-        'id_compra',
-        'cant_productos',
+        'producto_id',
+        'compra_id',
+        'cantidad',
         'precio_unitario',
         'total'
     ];
 
+    protected function casts(): array
+    {
+        return [
+            'precio_unitario' => 'decimal:2',
+            'total' => 'decimal:2',
+        ];
+    }
+
     public function producto()
     {
-        return $this->belongsTo(Producto::class, 'id_producto');
+        return $this->belongsTo(Producto::class);
     }
-    public function carrito()
+    public function compra()
     {
-        return $this->belongsTo(Carrito::class, 'id_detalleCompra');
+        return $this->belongsTo(Compra::class);
     }
 }

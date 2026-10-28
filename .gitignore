@@ -29,3 +29,9 @@ Thumbs.db
 /.claude
 AGENTS.md
 CLAUDE.md
+
+# Bases de datos locales (nunca al repo)
+*.sqlite
+*.sqlite-journal
+bdpuntovinieta
+artifacts/

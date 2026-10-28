@@ -13,17 +13,19 @@ return new class extends Migration
     {
         Schema::create('detalle_compras', function (Blueprint $table) {
             $table->id();
-            $table->integer('cantidad');
-            $table->decimal('precio_unitario', 8, 2);
-            $table->decimal('total', 8, 2);
-            $table->foreignId('id_compra')
-                ->constrained('compras','id')
-                ->onDelete('cascade')
-                ->onUpdate('cascade');
-            $table->foreignId('id_producto')
-                ->constrained('productos','id')
-                ->onDelete('cascade')
-                ->onUpdate('cascade');
+            $table->unsignedInteger('cantidad');
+            $table->decimal('precio_unitario', 10, 2);
+            $table->decimal('total', 10, 2);
+            // Si se borra la compra, se borra su detalle.
+            $table->foreignId('compra_id')
+                ->constrained('compras')
+                ->cascadeOnDelete()
+                ->cascadeOnUpdate();
+            // restrict: no se puede borrar un producto que ya se vendió.
+            $table->foreignId('producto_id')
+                ->constrained('productos')
+                ->restrictOnDelete()
+                ->cascadeOnUpdate();
             $table->timestamps();
         });
     }

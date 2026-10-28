@@ -1,32 +1,39 @@
 @extends('layouts.app')
-@section ('contenido')
-    <div class="form-container">
-        <h1>¡CONTACTANOS!</h1>
-        <div class="form-box" id="contacto-form">
-            <form method="POST" action="#" autocomplete="off" >
-                @csrf
-                <div class="label-input">
-                    <label for="nombre">Nombre:</label>
-                    <input type="text" id="nombre" name="nombre"  placeholder="Pepito" required>
+@section('titulo', 'Contacto')
+@section('contenido')
+    <div class="mx-auto max-w-xl">
+        <h1 class="titulo-seccion text-center">¡CONTACTANOS!</h1>
+
+        <form method="POST" action="{{ route('contacto.enviar') }}" class="tarjeta mt-6 space-y-5 p-6" novalidate>
+            @csrf
+            <div class="grid gap-5 sm:grid-cols-2">
+                <div>
+                    <label for="nombre" class="etiqueta">Nombre</label>
+                    <input type="text" id="nombre" name="nombre" value="{{ old('nombre') }}" placeholder="Pepito" class="campo" autocomplete="given-name" required>
+                    @error('nombre') <p class="error-campo">{{ $message }}</p> @enderror
                 </div>
-                <div class="label-input">
-                    <label for="apellido">Apellido:</label>
-                    <input type="text" id="apellido" name="apellido" placeholder="Pérez" required>
+                <div>
+                    <label for="apellido" class="etiqueta">Apellido</label>
+                    <input type="text" id="apellido" name="apellido" value="{{ old('apellido') }}" placeholder="Pérez" class="campo" autocomplete="family-name" required>
+                    @error('apellido') <p class="error-campo">{{ $message }}</p> @enderror
                 </div>
-                <div class="label-input">
-                    <label for="correo">Correo Electrónico:</label>
-                    <input type="email" id="correo" name="correo"  placeholder="pepito@example.com" required>
-                </div>
-                <div class="label-input">
-                    <label for="asunto">Asunto:</label>
-                    <input type="text" id="asunto" name="asunto" placeholder="Consulta" required>
-                </div>
-                <div class="label-input">
-                    <label for="mensaje">Mensaje:</label>
-                    <textarea id="mensaje" name="mensaje" rows="4"  placeholder="Escribe tu mensaje aquí..." required></textarea>
-                </div>
-                <button type="submit" class="btn-submit">ENVIAR</button>
-            </form>
-        </div>
+            </div>
+            <div>
+                <label for="correo" class="etiqueta">Correo electrónico</label>
+                <input type="email" id="correo" name="correo" value="{{ old('correo') }}" placeholder="pepito@example.com" class="campo" autocomplete="email" required>
+                @error('correo') <p class="error-campo">{{ $message }}</p> @enderror
+            </div>
+            <div>
+                <label for="asunto" class="etiqueta">Asunto</label>
+                <input type="text" id="asunto" name="asunto" value="{{ old('asunto') }}" placeholder="Consulta" class="campo" required>
+                @error('asunto') <p class="error-campo">{{ $message }}</p> @enderror
+            </div>
+            <div>
+                <label for="mensaje" class="etiqueta">Mensaje</label>
+                <textarea id="mensaje" name="mensaje" rows="5" placeholder="Escribí tu mensaje acá..." class="campo" required>{{ old('mensaje') }}</textarea>
+                @error('mensaje') <p class="error-campo">{{ $message }}</p> @enderror
+            </div>
+            <button type="submit" class="btn btn-primario w-full">Enviar</button>
+        </form>
     </div>
 @endsection

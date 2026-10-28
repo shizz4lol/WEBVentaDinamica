@@ -1,6 +1,7 @@
 <?php
 
-use App\Models\User;
+use App\Models\Administrador;
+use App\Models\Cliente;
 
 return [
 
@@ -17,7 +18,7 @@ return [
 
     'defaults' => [
         'guard' => env('AUTH_GUARD', 'web'),
-        'passwords' => env('AUTH_PASSWORD_BROKER', 'users'),
+        'passwords' => env('AUTH_PASSWORD_BROKER', 'clientes'),
     ],
 
     /*
@@ -37,10 +38,17 @@ return [
     |
     */
 
+    // Dos tipos de usuario, cada uno con su guard:
+    // - "web" (el de por defecto) para los clientes de la tienda.
+    // - "admin" para los administradores: auth('admin') o el middleware auth:admin.
     'guards' => [
         'web' => [
             'driver' => 'session',
-            'provider' => 'users',
+            'provider' => 'clientes',
+        ],
+        'admin' => [
+            'driver' => 'session',
+            'provider' => 'administradores',
         ],
     ],
 
@@ -62,9 +70,13 @@ return [
     */
 
     'providers' => [
-        'users' => [
+        'clientes' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', User::class),
+            'model' => Cliente::class,
+        ],
+        'administradores' => [
+            'driver' => 'eloquent',
+            'model' => Administrador::class,
         ],
 
         // 'users' => [
@@ -93,8 +105,8 @@ return [
     */
 
     'passwords' => [
-        'users' => [
-            'provider' => 'users',
+        'clientes' => [
+            'provider' => 'clientes',
             'table' => env('AUTH_PASSWORD_RESET_TOKEN_TABLE', 'password_reset_tokens'),
             'expire' => 60,
             'throttle' => 60,

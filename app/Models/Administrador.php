@@ -2,14 +2,17 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class Administrador extends Model
+// Extiende Authenticatable (y no Model) para poder iniciar sesión con el guard "admin".
+#[Hidden(['password', 'remember_token'])]
+class Administrador extends Authenticatable
 {
-    protected $table = 'administradors';
+    protected $table = 'administradores';
     protected $fillable = [
-        'nombre_usuario', 
-        'nombre', 
+        'nombre_usuario',
+        'nombre',
         'password'
     ];
     /**
@@ -22,11 +25,5 @@ class Administrador extends Model
         return [
             'password' => 'hashed',
         ];
-    }
-    public function productos(){
-        return $this->hasMany(Producto::class, 'id_administrador');
-    }
-    public function series(){
-        return $this->hasMany(Serie::class, 'id_administrador');
     }
 }

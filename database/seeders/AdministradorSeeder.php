@@ -2,7 +2,7 @@
 
 namespace Database\Seeders;
 
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Administrador;
 use Illuminate\Database\Seeder;
 
 class AdministradorSeeder extends Seeder
@@ -12,6 +12,10 @@ class AdministradorSeeder extends Seeder
      */
     public function run(): void
     {
-        //
+        // Usuario de PRUEBA. La contraseña se guarda hasheada por el cast del modelo.
+        Administrador::updateOrCreate(
+            ['nombre_usuario' => 'admin'],
+            ['nombre' => 'Administradora', 'password' => 'admin1234'],
+        );
     }
 }

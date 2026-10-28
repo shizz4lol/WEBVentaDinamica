@@ -11,16 +11,21 @@ return new class extends Migration
         Schema::create('productos', function (Blueprint $table) {
             $table->id();
             $table->string('nombre');
-            $table->decimal('precio', 8, 2);
+            $table->string('tipo', 10)->index(); // 'manga' o 'comic'
+            $table->integer('orden')->nullable();
+            $table->decimal('precio', 10, 2);
             $table->text('descripcion');
-            $table->integer('numero')->nullable();
-            $table->string('numero_paginas');
-            $table->boolean('es_serie')->default(true);
+            $table->unsignedInteger('numero')->nullable(); // número de tomo
+            $table->unsignedInteger('numero_paginas')->nullable();
+            $table->unsignedInteger('stock')->default(0);
+            $table->string('imagen')->nullable(); // ruta dentro de public/, ej: img/portadas/naruto-1.jpg
+            // Si el producto no pertenece a una serie (tomo único), queda en null.
+            $table->foreignId('serie_id')
+                ->nullable()
+                ->constrained('series')
+                ->nullOnDelete()
+                ->cascadeOnUpdate();
             $table->timestamps();
-            $table->foreignId('serie')
-            ->constrained('series','id')
-            ->onDelete('cascade')
-            ->onUpdate('cascade');;
         });
     }
 

@@ -6,13 +6,14 @@ services:
       dockerfile: Dockerfile
     container_name: ventadinamica_app
     working_dir: /var/www/html
+    # Sin env_file: Laravel lee el .env directamente desde la carpeta montada.
+    # Con env_file, los cambios del .env (ej. key:generate) no se veían hasta recrear el contenedor.
     volumes:
       - .:/var/www/html
-    env_file:
-      - .env
     ports:
       - "8001:8000"
-    command: php artisan serve --host=0.0.0.0 --port=8000
+    # composer install antes de arrancar: así el primer "up" no se cae por falta de vendor/
+    command: sh -c "composer install --no-interaction && php artisan serve --host=0.0.0.0 --port=8000"
     depends_on:
       db:
         condition: service_healthy
@@ -27,7 +28,8 @@ services:
       - .:/var/www/html
     ports:
       - "5173:5173"
-    command: npm run dev -- --host 0.0.0.0
+    # npm install antes de arrancar: así el primer "up" no se cae por falta de node_modules/
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
     depends_on:
       - app
 
@@ -42,9 +44,10 @@ services:
       MARIADB_PASSWORD: ${DB_PASSWORD}
     ports:
       - "127.0.0.1:3307:3306"
+    # Se quitó el volumen ./docker/mariadb/init: no hay scripts de inicio,
+    # las tablas las crean las migraciones de Laravel.
     volumes:
       - mariadb_data:/var/lib/mysql
-      - ./docker/mariadb/init:/docker-entrypoint-initdb.d:ro
     healthcheck:
       test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
       interval: 5s

@@ -3,17 +3,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsToMany; 
-use Illuminate\Database\Eloquent\Relations\HasMany; 
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Serie extends Model
 {
     protected $table = 'series';
+    protected $fillable = [
+        'nombre',
+        'estado',
+        'cant_tomos',
+        'demografia'
+    ];
     public function productos():HasMany
     {
-        return $this->hasMany(Producto::class, 'id_serie');
-    }
-    public function administrador(){
-        return $this->belongsTo(Administrador::class, 'id_administrador');
+        return $this->hasMany(Producto::class);
     }
 }

@@ -1,0 +1,125 @@
+<?php
+
+namespace Tests\Feature;
+
+use App\Models\Producto;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
+
+// Inicio, detalle de producto y buscador.
+class CatalogoTest extends TestCase
+{
+    use RefreshDatabase;
+
+    protected $seed = true;
+
+    public function test_el_inicio_muestra_los_productos_separados_en_mangas_y_comics(): void
+    {
+        $respuesta = $this->get('/');
+
+        $respuesta->assertOk()
+            ->assertSeeInOrder(['MANGAS', 'Naruto Vol. 1', 'CÓMICS', 'Watchmen'])
+            ->assertSee('img/portadas/one-piece-1.jpg')
+            ->assertSee('$ 14.500')
+            ->assertSee('<html lang="es">', false)
+            ->assertDontSee('src=""', false);
+    }
+
+    public function test_ranking_orden_y_destacados_del_catalogo(): void
+    {
+        $respuesta = $this->get('/')->assertOk();
+        $primeros = [
+            'Hunter x Hunter Vol. 1', 'One-Punch Man Vol. 1',
+            'Shingeki no Kyojin Vol. 1',
+            "JoJo's Bizarre Adventure Parte 1: Phantom Blood Vol. 1", 'Berserk Vol. 1',
+        ];
+        $this->assertSame($primeros, $respuesta['ranking']->pluck('nombre')->all());
+        $this->assertSame($primeros, $respuesta['mangas']->take(5)->pluck('nombre')->all());
+        $this->assertSame([$primeros[0], $primeros[3], $primeros[2]], $respuesta['destacados']->pluck('nombre')->all());
+        $this->assertSame(3, substr_count($respuesta->getContent(), 'data-diapositiva'));
+        $respuesta->assertDontSee('data-anterior', false)
+            ->assertDontSee('data-punto', false)
+            ->assertDontSee('data-pausa', false);
+
+        $jojos = $respuesta['mangas']->filter(fn ($p) => str_starts_with($p->nombre, "JoJo's"))->values();
+        $this->assertCount(9, $jojos);
+        foreach ($jojos as $indice => $producto) {
+            $this->assertStringContainsString('Parte '.($indice + 1).':', $producto->nombre);
+            $this->assertSame("JoJo's Bizarre Adventure", $producto->serie->nombre);
+        }
+        $resto = $respuesta['mangas']->slice(13)->pluck('nombre')->all();
+        $ordenados = $resto;
+        sort($ordenados);
+        $this->assertSame($ordenados, $resto);
+        // Si cambian las ventas, cambia el ranking: no es una lista fija de la vista.
+        $otro = Producto::where('nombre', 'Orient Vol. 1')->firstOrFail();
+        \App\Models\Compra::first()->detalles()->create([
+            'producto_id' => $otro->id, 'cantidad' => 30,
+            'precio_unitario' => $otro->precio, 'total' => $otro->precio * 30,
+        ]);
+        $this->assertSame($otro->id, $this->get('/')['ranking']->first()->id);
+    }
+
+    public function test_repetir_los_seeders_no_duplica_productos_ni_ventas(): void
+    {
+        $this->seed();
+        $this->assertSame(46, Producto::count());
+        $this->assertSame(1, \App\Models\Compra::count());
+        $this->assertSame(75, (int) \App\Models\DetalleCompra::sum('cantidad'));
+    }
+
+    public function test_un_producto_sin_stock_no_se_puede_agregar_desde_la_tarjeta(): void
+    {
+        $this->get('/')->assertSee('Sin stock');
+    }
+
+    public function test_el_detalle_muestra_los_datos_del_producto(): void
+    {
+        $producto = Producto::where('nombre', 'Death Note Vol. 1')->first();
+
+        $this->get(route('productos.detalle', $producto))
+            ->assertOk()
+            ->assertSee('Death Note Vol. 1')
+            ->assertSee('Serie')
+            ->assertSee('$ 14.900')
+            ->assertSee('quedan 5')
+            ->assertSee('Light Yagami');
+    }
+
+    public function test_un_producto_que_no_existe_da_404(): void
+    {
+        $this->get('/productos/9999')->assertNotFound();
+    }
+
+    public function test_el_buscador_encuentra_por_nombre_y_por_serie(): void
+    {
+        $this->get('/buscar?q=batman')
+            ->assertOk()
+            ->assertSee('2 productos encontrados')
+            ->assertSee('Batman: Año Uno')
+            ->assertSee('Batman: La broma asesina')
+            ->assertDontSee('Naruto Vol. 1');
+
+        // "Saga" es el nombre de la serie
+        $this->get('/buscar?q=saga')->assertSee('Saga Vol. 1');
+    }
+
+    public function test_el_buscador_avisa_cuando_no_encuentra_nada(): void
+    {
+        $this->get('/buscar?q=dragon')->assertOk()->assertSee('No encontramos nada');
+    }
+
+    public function test_el_buscador_trata_el_texto_como_texto_y_no_como_sql(): void
+    {
+        $this->get('/buscar?q='.urlencode("' OR 1=1 --"))
+            ->assertOk()
+            ->assertSee('0 productos encontrados');
+    }
+
+    public function test_el_buscador_no_se_rompe_con_textos_raros(): void
+    {
+        $this->get('/buscar?q='.str_repeat('a', 500))->assertOk()->assertSee('0 productos encontrados');
+        $this->get('/buscar?q[]=naruto')->assertOk()->assertSee('Escribí el nombre');
+        $this->get('/buscar')->assertOk()->assertSee('Escribí el nombre');
+    }
+}

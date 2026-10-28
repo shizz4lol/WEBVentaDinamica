@@ -24,10 +24,13 @@ RUN apt-get update && apt-get install -y \
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
-    && apt-get update \
-    && apt-get install -y nodejs \
-    && rm -rf /var/lib/apt/lists/*
+# Node 22 copiado de la imagen oficial (antes se instalaba con "curl | bash",
+# que si fallaba la descarga dejaba la imagen sin npm y sin avisar).
+COPY --from=node:22-bookworm-slim /usr/local/bin/node /usr/local/bin/node
+COPY --from=node:22-bookworm-slim /usr/local/lib/node_modules /usr/local/lib/node_modules
+RUN ln -s ../lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm \
+    && ln -s ../lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx \
+    && node -v && npm -v
 
 WORKDIR /var/www/html
 

@@ -12,36 +12,35 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('compras', function (Blueprint $table) {
-        $table->id();
+            $table->id();
+            // Copia de los datos del cliente al momento de comprar
+            // (si después cambia su dirección, la compra no se modifica).
             $table->string('nombre_cliente');
             $table->string('apellido_cliente');
-            $table->integer('dni_cliente');
-            $table->integer('telefono_cliente');
+            $table->string('dni_cliente', 10);
+            $table->string('telefono_cliente', 20);
             $table->string('email_cliente');
-            
+
             $table->string('nombre_calle');
-            $table->integer('numero_calle');
-            $table->integer('codigo_postal');
+            $table->unsignedInteger('numero_calle');
+            $table->string('codigo_postal', 10);
             $table->date('fecha');
 
-            $table->decimal('subtotal', 8, 2);
-            $table->integer('descuento')->default(0);
-            $table->decimal('total', 8, 2);
+            $table->decimal('subtotal', 10, 2);
+            $table->unsignedTinyInteger('descuento')->default(0); // porcentaje
+            $table->decimal('total', 10, 2);
 
+            // Nunca se guarda el número de tarjeta: solo el método elegido.
             $table->string('metodo_pago');
-            $table->integer('numero_tarjeta')->nullable();
             $table->string('estado_envio')->default('Pendiente');
+            // restrict: no se puede borrar un cliente que tiene compras,
+            // así no se pierde el historial de ventas.
+            $table->foreignId('cliente_id')
+                ->nullable()
+                ->constrained('clientes')
+                ->restrictOnDelete()
+                ->cascadeOnUpdate();
             $table->timestamps();
-            $table->foreignId('id_cliente')
-                ->nullable()
-                ->constrained('clientes','id')
-                ->onDelete('cascade')
-                ->onUpdate('cascade');
-            $table->foreignId('id_carrito')
-                ->nullable()
-                ->constrained('carritos','id')
-                ->onDelete('cascade')
-                ->onUpdate('cascade');
         });
     }
 

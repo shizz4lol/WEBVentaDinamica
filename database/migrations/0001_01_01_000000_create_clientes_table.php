@@ -16,14 +16,17 @@ return new class extends Migration
             $table->string('nombre_usuario')->unique();
             $table->string('password');
             $table->string('nombre');
-            $table->string('apellido');
-            $table->integer('dni')->unique();
+            // Apellido y DNI son opcionales al registrarse: se completan al hacer la primera compra.
+            $table->string('apellido')->nullable();
+            // DNI, teléfono y código postal como texto: no se hacen cuentas con ellos
+            // y un teléfono como 2994123456 no entra en un integer.
+            $table->string('dni', 10)->nullable()->unique();
             $table->string('email')->unique();
             $table->timestamp('email_verified_at')->nullable();
-            $table->string('telefono')->nullable();
+            $table->string('telefono', 20)->nullable();
             $table->string('nombre_calle')->nullable();
-            $table->integer('numero_calle')->nullable();
-            $table->integer('codigo_postal')->nullable();
+            $table->unsignedInteger('numero_calle')->nullable();
+            $table->string('codigo_postal', 10)->nullable();
             $table->string('localidad')->nullable();
             $table->string('metodo_pago')->nullable();
             $table->rememberToken();

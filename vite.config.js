@@ -7,7 +7,8 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
     plugins: [
         laravel({
-            input: ['resources/js/app.jsx'],
+            // El CSS va como entrada aparte para que cargue antes que el JS (sin "parpadeo").
+            input: ['resources/css/app.css', 'resources/js/app.jsx'],
             refresh: true,
         }),
         react(),
@@ -21,7 +22,11 @@ export default defineConfig({
             host: 'localhost',
         },
         watch: {
-            ignored: ['**/storage/framework/views/**'],
+            // Con el proyecto en un disco de Windows y Vite dentro de Docker, Vite no se entera
+            // de los cambios en los archivos. usePolling hace que revise cada tanto.
+            usePolling: true,
+            interval: 300,
+            ignored: ['**/storage/**', '**/vendor/**', '**/node_modules/**'],
         },
     },
 });

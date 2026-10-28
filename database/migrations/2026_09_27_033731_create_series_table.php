@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('nombre');
             $table->string('estado')->default('En emisión');
-            $table->string('cant_tomos');
-            $table->string('demografia');
+            $table->unsignedSmallInteger('cant_tomos')->nullable();
+            $table->string('demografia')->nullable();
             $table->timestamps();
         });
     }
