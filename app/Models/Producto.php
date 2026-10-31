@@ -4,14 +4,18 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
 class Producto extends Model
 {
     public const TIPO_MANGA = 'manga';
+
     public const TIPO_COMIC = 'comic';
 
     protected $table = 'productos';
+
     protected $fillable = [
         'nombre',
+        'slug',
         'tipo',
         'orden',
         'precio',
@@ -20,8 +24,9 @@ class Producto extends Model
         'numero_paginas',
         'stock',
         'imagen',
-        'serie_id'
+        'serie_id',
     ];
+
     protected function casts(): array
     {
         return [
@@ -30,23 +35,35 @@ class Producto extends Model
             'orden' => 'integer',
         ];
     }
+
     // Precio listo para mostrar: "$ 14.500"
     public function precioFormateado(): string
     {
         return '$ '.number_format((float) $this->precio, 0, ',', '.');
     }
-    public function serie():BelongsTo
+
+    public function getRouteKeyName(): string
+    {
+        return 'slug';
+    }
+
+    public function serie(): BelongsTo
     {
         return $this->belongsTo(Serie::class);
     }
+
     public function detalleCompras()
     {
         return $this->hasMany(DetalleCompra::class);
     }
-    public function favoritos(){
+
+    public function favoritos()
+    {
         return $this->hasMany(Favorito::class);
     }
-    public function carritoItems(){
+
+    public function carritoItems()
+    {
         return $this->hasMany(CarritoItem::class);
     }
 }

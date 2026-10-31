@@ -26,11 +26,12 @@
                 </ul>
             </div>
         @else
-            <div class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-5">
-                @foreach ($resultados as $producto)
-                    <x-tarjeta-producto :producto="$producto" :mostrar-tipo="true" />
-                @endforeach
-            </div>
+            <x-lista-productos-react
+                :productos="$productosReact"
+                :mostrar-tipo="true"
+                mensaje-vacio="No encontramos productos."
+                class="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-5"
+            />
         @endif
     @endif
 @endsection

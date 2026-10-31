@@ -31,12 +31,16 @@ Route::post('/logout', [LoginController::class, 'salir'])->name('logout');
 // ---- Carrito (clientes e invitados) ----
 Route::get('/carrito', [CarritoController::class, 'ver'])->name('carrito.ver');
 Route::post('/carrito', [CarritoController::class, 'agregar'])->name('carrito.agregar');
-Route::delete('/carrito/invitado/{producto}', [CarritoController::class, 'quitarInvitado'])->name('carrito.quitar-invitado');
+Route::delete('/carrito/invitado/{productoId}', [CarritoController::class, 'quitarInvitado'])
+    ->whereNumber('productoId')
+    ->name('carrito.quitar-invitado');
 Route::middleware('auth:web')->group(function () {
     Route::delete('/carrito/{item}', [CarritoController::class, 'quitar'])->name('carrito.quitar');
 });
 
 // ---- Administración (solo administradores) ----
-Route::middleware('auth:admin')->prefix('admin')->group(function () {
-    Route::get('/', [AdminController::class, 'panel'])->name('admin.panel');
+Route::name('admin.')->middleware('auth:admin')->prefix('admin')->group(function () {
+    Route::get('/', [AdminController::class, 'panel'])->name('panel');
+    Route::get('/series/buscar', [AdminController::class, 'buscarSeries'])->name('series.buscar');
+    Route::resource('productos', AdminController::class)->except(['show']);
 });

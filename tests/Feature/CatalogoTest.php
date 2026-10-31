@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Models\Compra;
+use App\Models\DetalleCompra;
 use App\Models\Producto;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
@@ -22,7 +24,12 @@ class CatalogoTest extends TestCase
             ->assertSee('img/portadas/one-piece-1.jpg')
             ->assertSee('$ 14.500')
             ->assertSee('<html lang="es">', false)
-            ->assertDontSee('src=""', false);
+            ->assertDontSee('src=""', false)
+            ->assertSee('data-lista-productos', false)
+            ->assertSee('data-lista-ranking', false)
+            ->assertSee('data-token-csrf', false)
+            ->assertSee(route('carrito.agregar'), false)
+            ->assertDontSee('class="tarjeta producto', false);
     }
 
     public function test_ranking_orden_y_destacados_del_catalogo(): void
@@ -35,6 +42,15 @@ class CatalogoTest extends TestCase
         ];
         $this->assertSame($primeros, $respuesta['ranking']->pluck('nombre')->all());
         $this->assertSame($primeros, $respuesta['mangas']->take(5)->pluck('nombre')->all());
+        $this->assertSame($primeros, array_column($respuesta['productosReact']['ranking'], 'nombre'));
+        $this->assertSame(
+            $respuesta['mangas']->pluck('nombre')->all(),
+            array_column($respuesta['productosReact']['mangas'], 'nombre'),
+        );
+        $this->assertSame(
+            $respuesta['novedades']->pluck('nombre')->all(),
+            array_column($respuesta['productosReact']['novedades'], 'nombre'),
+        );
         $this->assertSame([$primeros[0], $primeros[3], $primeros[2]], $respuesta['destacados']->pluck('nombre')->all());
         $this->assertSame(3, substr_count($respuesta->getContent(), 'data-diapositiva'));
         $respuesta->assertDontSee('data-anterior', false)
@@ -53,7 +69,7 @@ class CatalogoTest extends TestCase
         $this->assertSame($ordenados, $resto);
         // Si cambian las ventas, cambia el ranking: no es una lista fija de la vista.
         $otro = Producto::where('nombre', 'Orient Vol. 1')->firstOrFail();
-        \App\Models\Compra::first()->detalles()->create([
+        Compra::first()->detalles()->create([
             'producto_id' => $otro->id, 'cantidad' => 30,
             'precio_unitario' => $otro->precio, 'total' => $otro->precio * 30,
         ]);
@@ -64,13 +80,34 @@ class CatalogoTest extends TestCase
     {
         $this->seed();
         $this->assertSame(46, Producto::count());
-        $this->assertSame(1, \App\Models\Compra::count());
-        $this->assertSame(75, (int) \App\Models\DetalleCompra::sum('cantidad'));
+        $this->assertSame(1, Compra::count());
+        $this->assertSame(75, (int) DetalleCompra::sum('cantidad'));
     }
 
-    public function test_un_producto_sin_stock_no_se_puede_agregar_desde_la_tarjeta(): void
+    public function test_el_catalogo_pasa_a_react_el_estado_de_stock_sin_exponer_el_inventario_completo(): void
     {
-        $this->get('/')->assertSee('Sin stock');
+        $respuesta = $this->get('/')->assertOk();
+        $productos = array_merge(
+            $respuesta['productosReact']['mangas'],
+            $respuesta['productosReact']['comics'],
+        );
+        $sinStock = collect($productos)->firstWhere('nombre', 'Maus I: Mi padre sangra historia');
+
+        $this->assertSame(true, $sinStock['sinStock']);
+        $this->assertArrayNotHasKey('stock', $sinStock);
+        $this->assertArrayNotHasKey('email', $sinStock);
+        $this->assertArrayNotHasKey('password', $sinStock);
+    }
+
+    public function test_el_catalogo_escapa_los_datos_antes_de_serializarlos_para_react(): void
+    {
+        $producto = Producto::where('nombre', 'One Piece Vol. 1')->firstOrFail();
+        $producto->update(['nombre' => '</div><script>alert(1)</script>']);
+
+        $this->get('/')
+            ->assertOk()
+            ->assertDontSee('<script>alert(1)</script>', false)
+            ->assertSee('\u003Cscript\u003E', false);
     }
 
     public function test_el_detalle_muestra_los_datos_del_producto(): void
@@ -86,6 +123,22 @@ class CatalogoTest extends TestCase
             ->assertSee('Light Yagami');
     }
 
+    public function test_el_detalle_usa_el_slug_y_redirige_las_urls_numericas_anteriores(): void
+    {
+        $producto = Producto::where('nombre', 'One Piece Vol. 1')->firstOrFail();
+        $urlSlug = route('productos.detalle', $producto);
+
+        $this->assertSame(url('/productos/one-piece-vol-1'), $urlSlug);
+
+        $this->get($urlSlug)
+            ->assertOk()
+            ->assertSee($producto->nombre);
+
+        $this->get('/productos/'.$producto->id)
+            ->assertFound()
+            ->assertRedirect($urlSlug);
+    }
+
     public function test_un_producto_que_no_existe_da_404(): void
     {
         $this->get('/productos/9999')->assertNotFound();
@@ -98,7 +151,9 @@ class CatalogoTest extends TestCase
             ->assertSee('2 productos encontrados')
             ->assertSee('Batman: Año Uno')
             ->assertSee('Batman: La broma asesina')
-            ->assertDontSee('Naruto Vol. 1');
+            ->assertDontSee('Naruto Vol. 1')
+            ->assertSee('data-lista-productos', false)
+            ->assertSee('data-mostrar-tipo="true"', false);
 
         // "Saga" es el nombre de la serie
         $this->get('/buscar?q=saga')->assertSee('Saga Vol. 1');
@@ -106,7 +161,10 @@ class CatalogoTest extends TestCase
 
     public function test_el_buscador_avisa_cuando_no_encuentra_nada(): void
     {
-        $this->get('/buscar?q=dragon')->assertOk()->assertSee('No encontramos nada');
+        $this->get('/buscar?q=dragon')
+            ->assertOk()
+            ->assertSee('No encontramos nada')
+            ->assertDontSee('data-lista-productos', false);
     }
 
     public function test_el_buscador_trata_el_texto_como_texto_y_no_como_sql(): void

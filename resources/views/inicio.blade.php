@@ -48,36 +48,23 @@
         <div class="min-w-0">
             <section id="novedades" aria-labelledby="titulo-novedades" class="scroll-mt-6">
                 <div class="cabecera-seccion"><h2 id="titulo-novedades" class="titulo-seccion">Novedades</h2></div>
-                <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-                    @forelse ($novedades as $producto)
-                        <x-tarjeta-producto :producto="$producto" />
-                    @empty
-                        <p class="col-span-full text-texto-suave">Todavía no hay novedades cargadas.</p>
-                    @endforelse
-                </div>
+                <x-lista-productos-react
+                    :productos="$productosReact['novedades']"
+                    mensaje-vacio="Todavía no hay novedades cargadas."
+                    class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5"
+                />
             </section>
         </div>
 
         <aside class="min-w-0 space-y-6" aria-label="Ranking">
             <section id="ranking" aria-labelledby="titulo-ranking" class="panel scroll-mt-6 p-4">
                 <h2 id="titulo-ranking" class="font-titulo text-2xl tracking-wide">Más vendidos</h2>
-                <ol class="mt-4 divide-y divide-borde">
-                    @forelse ($ranking as $producto)
-                        <li class="grid grid-cols-[1.5rem_3rem_minmax(0,1fr)] items-center gap-3 py-4">
-                            <span class="font-titulo text-3xl text-rosa"><span class="sr-only">Puesto </span>{{ $loop->iteration }}</span>
-                            @if ($producto->imagen)
-                                <img src="{{ asset($producto->imagen) }}" alt="" width="48" height="72" loading="lazy" class="aspect-[2/3] w-12 object-cover">
-                            @else
-                                <span class="aspect-[2/3] bg-superficie-2" aria-hidden="true"></span>
-                            @endif
-                            <div class="min-w-0">
-                                <a href="{{ route('productos.detalle', $producto) }}" class="flex min-h-11 items-center text-sm font-bold hover:text-rosa">{{ $producto->nombre }}</a>
-                                <p class="text-xs text-texto-suave">{{ $producto->serie?->nombre }}</p>
-                            </div>
-                        </li>
-                    @empty
-                        <li class="py-4 text-sm text-texto-suave">Todavía no hay productos en el ranking.</li>
-                    @endforelse
+                <ol
+                    data-lista-ranking
+                    data-productos="{{ \Illuminate\Support\Js::encode($productosReact['ranking']) }}"
+                    data-mensaje-vacio="Todavía no hay productos en el ranking."
+                    class="mt-4 divide-y divide-borde"
+                >
                 </ol>
             </section>
 
@@ -90,13 +77,11 @@
                 <h2 id="titulo-{{ $id }}" class="titulo-seccion">{{ $titulo }}</h2>
                 <p class="text-sm text-texto-suave">{{ $productos->count() }} {{ $productos->count() === 1 ? 'título' : 'títulos' }}</p>
             </div>
-            <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-5">
-                @forelse ($productos as $producto)
-                    <x-tarjeta-producto :producto="$producto" />
-                @empty
-                    <p class="col-span-full text-texto-suave">Todavía no hay {{ strtolower($titulo) }} cargados.</p>
-                @endforelse
-            </div>
+            <x-lista-productos-react
+                :productos="$productosReact[$id]"
+                mensaje-vacio="Todavía no hay {{ strtolower($titulo) }} cargados."
+                class="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-5 lg:grid-cols-5"
+            />
         </section>
     @endforeach
     <section aria-labelledby="titulo-redes" class="panel mt-12 p-5">

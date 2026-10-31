@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Producto;
 use App\Models\Serie;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
 
 class ProductoSeeder extends Seeder
 {
@@ -283,7 +284,6 @@ class ProductoSeeder extends Seeder
 
         foreach ($mangasAdicionales as $manga) {
             $slug = $manga['slug'];
-            unset($manga['slug']);
             $productos[] = [
                 'nombre' => $manga['nombre'] ?? $manga['serie'].' Vol. 1',
                 'tipo' => Producto::TIPO_MANGA,
@@ -317,7 +317,7 @@ class ProductoSeeder extends Seeder
             'Berserk Vol. 1' => 5,
         ];
 
-        foreach (["Battle Tendency", "Stardust Crusaders", "Diamond is Unbreakable", "Golden Wind", "Stone Ocean", "Steel Ball Run", "JoJolion", "The JOJOLands"] as $indice => $parte) {
+        foreach (['Battle Tendency', 'Stardust Crusaders', 'Diamond is Unbreakable', 'Golden Wind', 'Stone Ocean', 'Steel Ball Run', 'JoJolion', 'The JOJOLands'] as $indice => $parte) {
             $numero = $indice + 2;
             $ordenDestacado["JoJo's Bizarre Adventure Parte {$numero}: {$parte} Vol. 1"] = $numero + 4;
         }
@@ -325,6 +325,10 @@ class ProductoSeeder extends Seeder
         foreach ($productos as $datos) {
             $serie = $datos['serie'] ? Serie::where('nombre', $datos['serie'])->first() : null;
             unset($datos['serie']);
+            if (! isset($datos['slug'])) {
+                $slug = Str::slug($datos['nombre']) ?: 'producto';
+                $datos['slug'] = ctype_digit($slug) ? 'producto-'.$slug : $slug;
+            }
             $datos['serie_id'] = $serie?->id;
             // Restaura también a null el orden del webcomic y de los demás productos.
             $datos['orden'] = $ordenDestacado[$datos['nombre']] ?? null;

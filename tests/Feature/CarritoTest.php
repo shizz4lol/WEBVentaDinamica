@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Administrador;
 use App\Models\Carrito;
 use App\Models\Cliente;
 use App\Models\Producto;
@@ -31,9 +32,9 @@ class CarritoTest extends TestCase
         $this->post('/carrito', ['producto_id' => $producto->id, 'cantidad' => 2])->assertSessionHasNoErrors();
         $this->post('/carrito', ['producto_id' => $producto->id])->assertSessionHas('carrito', [$producto->id => 3]);
         $this->get('/carrito')->assertOk()->assertSee($producto->nombre)->assertSee('$ 43.500')
-            ->assertSee('para guardar tu carrito')->assertSee(route('carrito.quitar-invitado', $producto), false);
+            ->assertSee('para guardar tu carrito')->assertSee(route('carrito.quitar-invitado', $producto->id), false);
         $this->assertDatabaseCount('carritos', 0);
-        $this->delete(route('carrito.quitar-invitado', $producto))->assertRedirect(route('carrito.ver'))->assertSessionHas('carrito', []);
+        $this->delete(route('carrito.quitar-invitado', $producto->id))->assertRedirect(route('carrito.ver'))->assertSessionHas('carrito', []);
         $this->get('/carrito')->assertSee('Tu carrito está vacío');
     }
 
@@ -90,7 +91,7 @@ class CarritoTest extends TestCase
 
     public function test_admin_no_puede_usar_carrito(): void
     {
-        $this->actingAs(\App\Models\Administrador::firstOrFail(), 'admin');
+        $this->actingAs(Administrador::firstOrFail(), 'admin');
         $this->post('/carrito', ['producto_id' => 1])->assertRedirect(route('inicio'))->assertSessionHasErrors('carrito');
         $this->get('/carrito')->assertRedirect(route('inicio'));
         $this->delete(route('carrito.quitar-invitado', 1))->assertRedirect(route('inicio'));

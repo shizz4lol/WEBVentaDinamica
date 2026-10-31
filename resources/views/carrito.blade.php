@@ -41,7 +41,7 @@
                         <div class="ml-auto flex items-center gap-3">
                             <p class="font-bold whitespace-nowrap">$ {{ number_format($item->cantidad * $producto->precio, 0, ',', '.') }}</p>
 
-                            <form action="{{ auth('web')->check() ? route('carrito.quitar', $item) : route('carrito.quitar-invitado', $producto) }}" method="post">
+                            <form action="{{ auth('web')->check() ? route('carrito.quitar', $item) : route('carrito.quitar-invitado', $producto->id) }}" method="post">
                                 @csrf
                                 @method('DELETE')
                                 <button type="submit" class="btn btn-secundario px-3">

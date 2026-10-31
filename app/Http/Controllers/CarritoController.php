@@ -89,12 +89,13 @@ class CarritoController extends Controller
         return redirect()->route('carrito.ver')->with('estado', 'Producto quitado del carrito.');
     }
 
-    public function quitarInvitado(Request $request, Producto $producto)
+    public function quitarInvitado(Request $request, int $productoId)
     {
         if (auth('admin')->check()) {
             return redirect()->route('inicio')->withErrors(['carrito' => 'El carrito es solo para clientes.']);
         }
         abort_if(auth('web')->check(), 404);
+        $producto = Producto::findOrFail($productoId);
         $cantidades = $request->session()->get('carrito', []);
         unset($cantidades[$producto->id]);
         $request->session()->put('carrito', $cantidades);
